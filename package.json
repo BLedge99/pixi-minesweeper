@@ -16,6 +16,7 @@
   "type": "commonjs",
   "dependencies": {
     "pixi.js": "^8.17.1",
+    "tweedle.js": "^2.1.0",
     "webpack": "^5.106.1"
   },
   "devDependencies": {

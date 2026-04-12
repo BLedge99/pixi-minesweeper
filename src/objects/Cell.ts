@@ -58,6 +58,10 @@ export class Cell extends Container {
             this.bg.beginFill(0xff0000);
             this.bg.drawRect(0, 0, this.cellSize, this.cellSize);
             this.bg.endFill();
+
+            this.emit('bombClicked', bomby);   // Send the bomb sprite to the Grid
+
+            console.log('bomb clicked, emitting');  
         } else {
             this.bg.beginFill(0x999999);
             this.bg.drawRect(0, 0, this.cellSize, this.cellSize);

@@ -1,5 +1,6 @@
-import { Container } from "pixi.js";
+import { Container, Sprite, Text } from "pixi.js";
 import { Cell } from "./Cell";
+import { Easing, Tween } from "tweedle.js";
 
 export class Grid extends Container {
     private readonly gridWidth: number;
@@ -27,6 +28,9 @@ export class Grid extends Container {
                 const cell = new Cell(this.cellSize, isBomb);
                 cell.x = x * this.cellSize;
                 cell.y = y * this.cellSize;
+                cell.on('bombClicked', (bombSprite: Sprite) => {
+                    this.endGame(bombSprite);
+                });
                 this.addChild(cell);
                 this.cells[y][x] = cell;
             }
@@ -54,5 +58,35 @@ export class Grid extends Container {
                 cell.setAdjacentBombs(adjacentBombs);
             }
         }
+    }
+
+    private endGame(sprite: Sprite) {
+
+        const bombPosition = sprite.getGlobalPosition();
+
+        sprite.parent?.removeChild(sprite);
+        this.addChild(sprite);
+
+        sprite.x = this.toLocal(bombPosition).x;
+        sprite.y = this.toLocal(bombPosition).y;
+        console.log('Tween starting, bomb at', sprite.x, sprite.y);
+        this.showGameOver();
+
+        new Tween(sprite)
+            .to({ x: this.width / 2 - sprite.width / 2, y: this.height / 2 - sprite.height / 2 }, 1000)
+            .easing(Easing.Back.Out)
+            .start();
+    }
+
+    private showGameOver() {
+        const text = new Text('Game Over', {
+            fill: 0xff0000,
+            fontSize: 48,
+            fontWeight: 'bold'
+        });
+        text.anchor.set(0.5);
+        text.x = this.width / 2;
+        text.y = this.height / 2;
+        this.addChild(text);
     }
 }
