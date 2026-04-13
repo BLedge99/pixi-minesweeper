@@ -1,102 +1,145 @@
-import { Container, Text } from 'pixi.js';
+import { Container, Graphics, Text } from 'pixi.js';
 import { Grid } from './Grid';
+import { Button, Input, Select } from '@pixi/ui';
 
 export class Menu extends Container {
     private screenWidth: number;
     private screenHeight: number;
-    private gridSizeInput!: HTMLInputElement;
-    private difficultyInput!: HTMLSelectElement;
-    private startButton!: HTMLButtonElement;
-
+    private gridSizeInput!: Input;
+    private difficultyInput!: Select;
+    private readonly difficultyLabels = ['easy', 'medium', 'hard'];
+    
     private readonly bombMultipliers: Record<string, number> = {
-        easy:   0.1,
-        medium: 0.2,
-        hard:   0.4,
+        easy: 0.1,
+        medium: 0.15,
+        hard: 0.2,
     };
 
     constructor(screenWidth: number, screenHeight: number) {
         super();
-        this.screenWidth  = screenWidth;
+        this.screenWidth = screenWidth;
         this.screenHeight = screenHeight;
-
-        const title = new Text('Minesweeper', {
-            fill: 0xffffff,
-            fontSize: 36,
-            fontWeight: 'bold',
-        });
-        title.anchor.set(0.5);
-        title.x = screenWidth / 2;
-        title.y = screenHeight / 2 - 200;
-        this.addChild(title);
-
         this.showButtons();
     }
 
-    private showButtons(): void {
-        // Grid size input
-        this.gridSizeInput = document.createElement('input');
-        this.gridSizeInput.type  = 'number';
-        this.gridSizeInput.value = '12';
-        this.gridSizeInput.min   = '5';
-        this.gridSizeInput.max   = '30';
-        Object.assign(this.gridSizeInput.style, {
-            position:  'absolute',
-            left:      '50%',
-            top:       'calc(50% - 20px)',
-            transform: 'translate(-50%, -50%)',
-        });
-        document.body.appendChild(this.gridSizeInput);
+    private createButton(label: string, width: number, height: number, callback: () => void): Container {
+        const container = new Container();
+        
+        const bg = new Graphics()
+            .beginFill(0x444444)
+            .drawRoundedRect(0, 0, width, height, 12)
+            .endFill();
+        
+        const text = new Text(label, { fill: 0xffffff, fontSize: 20 });
+        text.anchor.set(0.5);
+        text.x = width / 2;
+        text.y = height / 2;
 
-        // Difficulty dropdown
-        this.difficultyInput = document.createElement('select');
-        (['Easy', 'Medium', 'Hard'] as const).forEach(level => {
-            const option = document.createElement('option');
-            option.value       = level.toLowerCase();
-            option.textContent = level;
-            this.difficultyInput.appendChild(option);
-        });
-        Object.assign(this.difficultyInput.style, {
-            position:  'absolute',
-            left:      '50%',
-            top:       'calc(50% + 20px)',
-            transform: 'translate(-50%, -50%)',
-        });
-        document.body.appendChild(this.difficultyInput);
-
-        // Start button
-        this.startButton = document.createElement('button');
-        this.startButton.textContent = 'Start Game';
-        Object.assign(this.startButton.style, {
-            position:  'absolute',
-            left:      '50%',
-            top:       'calc(50% + 60px)',
-            transform: 'translate(-50%, -50%)',
-        });
-        this.startButton.addEventListener('click', () => this.startGame());
-        document.body.appendChild(this.startButton);
+        container.addChild(bg, text);
+        
+        const btn = new Button(container);
+        
+        
+        btn.onPress.connect(callback);
+        
+        
+        btn.onHover.connect(() => { bg.tint = 0xaaaaaa; });
+        btn.onOut.connect(() => { bg.tint = 0xffffff; });
+        
+        return container; 
     }
 
-    private removeButtons(): void {
-        this.gridSizeInput.remove();
-        this.difficultyInput.remove();
-        this.startButton.remove();
+    private showButtons(): void {
+        const centerX = this.screenWidth / 2;
+        const centerY = this.screenHeight / 2;
+        const uiWidth = 240;
+        const uiHeight = 50;
+
+       
+        const mainTitle = new Text('MINESWEEPER', {
+            fill: 0xffffff,
+            fontSize: 48,
+            fontWeight: 'bold',
+        });
+        mainTitle.anchor.set(0.5);
+        mainTitle.x = centerX;
+        mainTitle.y = centerY - 200;
+        this.addChild(mainTitle);
+
+       
+        const startBtnView = this.createButton('START GAME', uiWidth, uiHeight, () => this.startGame());
+        startBtnView.x = centerX - uiWidth / 2;
+        startBtnView.y = centerY - 60;
+        this.addChild(startBtnView);
+
+        const inputBg = new Graphics()
+            .beginFill(0x444444)
+            .drawRoundedRect(0, 0, uiWidth, uiHeight, 12)
+            .endFill();
+
+        this.gridSizeInput = new Input({
+            bg: inputBg,
+            padding: 12,
+            placeholder: 'Grid Size (5-30)',
+            textStyle: { fill: 0xffffff, fontSize: 18 },
+            value: 'Enter Grid Size (5-30)',
+        });
+        this.gridSizeInput.x = centerX - uiWidth / 2;
+        this.gridSizeInput.y = centerY + 10;
+        this.addChild(this.gridSizeInput);
+
+        const selectBg = new Graphics()
+            .beginFill(0x444444)
+            .drawRoundedRect(0, 0, uiWidth, uiHeight, 12)
+            .endFill();
+            
+        const selectOpenBg = new Graphics()
+            .beginFill(0x555555) 
+            .drawRoundedRect(0, 0, uiWidth, uiHeight, 12)
+            .endFill();
+
+        this.difficultyInput = new Select({
+            closedBG: selectBg,
+            openBG: selectOpenBg,
+            textStyle: { fill: 0xffffff, fontSize: 18 }, 
+            items: {
+                items: this.difficultyLabels,
+                backgroundColor: 0x333333,
+                hoverColor: 0x666666,
+                width: uiWidth,
+                height: uiHeight,
+                textStyle: { fill: 0xffffff, fontSize: 18, fontWeight: 'bold' }, 
+                radius: 12,
+            },
+            scrollBox: {
+                width: uiWidth,
+                height: uiHeight * 3, 
+                radius: 12,
+            }
+        });
+        
+        this.difficultyInput.x = centerX - uiWidth / 2;
+        this.difficultyInput.y = centerY + 80;
+        
+        this.addChild(this.difficultyInput);
     }
 
     private startGame(): void {
-        const gridSize   = Math.max(5, Math.min(30, parseInt(this.gridSizeInput.value, 10) || 12));
-        const difficulty = this.difficultyInput.value;
-        const bombCount  = Math.floor(gridSize * gridSize * this.bombMultipliers[difficulty]);
-        const cellSize   = 48;
+        const gridSize = parseInt(this.gridSizeInput.value);
+        if (isNaN(gridSize) || gridSize < 5 || gridSize > 30) {
+            alert('Enter a size between 5 and 30');
+            return;
+        }
 
-        console.log(`Starting game: ${gridSize}x${gridSize}, ${difficulty}, ${bombCount} bombs`);
-
-        this.removeButtons();
+        const difficulty = (this.difficultyInput.value || 'medium') as keyof typeof this.bombMultipliers;
+        const multiplier = this.bombMultipliers[difficulty] || 0.15;
+        const bombCount = Math.floor(gridSize * gridSize * multiplier);
+        
         this.removeChildren();
 
-        const grid = new Grid(gridSize, gridSize, cellSize, bombCount);
-        grid.x = (this.screenWidth  - gridSize * cellSize) / 2;
-        grid.y = (this.screenHeight - gridSize * cellSize) / 2;
+        const grid = new Grid(gridSize, gridSize, 48, bombCount);
+        grid.x = (this.screenWidth - (gridSize * 48)) / 2;
+        grid.y = (this.screenHeight - (gridSize * 48)) / 2;
         this.addChild(grid);
     }
-
 }
